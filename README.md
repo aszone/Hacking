@@ -15,7 +15,7 @@ curl -sS https://getcomposer.org/installer | php
 Next, run the Composer command to install the Avenger Hacking:
 
 ```bash
-php composer.phar require aszone/fakeheaders
+php composer.phar require aszone/hacking
 ```
 ## Basic Usage
 
