@@ -23,7 +23,8 @@
     "guzzlehttp/guzzle":"~5.3",
     "symfony/dom-crawler":"~2.8",
     "respect/validation":"~1.0",
-    "aszone/fakeheadres": "dev-master"
+    "aszone/fakeheadres": "dev-master",
+    "aszone/simple_html_dom": "~1.5"
   },
   "autoload": {
     "psr-4": {
