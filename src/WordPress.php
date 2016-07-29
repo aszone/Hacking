@@ -1,11 +1,11 @@
 <?php
 
-namespace Aszone\Hacking;
+namespace Aszone\Hacking\WordPress;
 
 use GuzzleHttp\Client;
 use Respect\Validation\Validator as v;
 use Symfony\Component\DomCrawler\Crawler;
-use Aszone\FakeHeaders;
+use Aszone\FakeHeaders\FakeHeaders;
 
 //use Aszone\Site;
 
@@ -51,11 +51,15 @@ class WordPress
         ]];
     }
 
-    public function __construct($target)
+    public function __construct($commands=array())
     {
         $this->optionTor = array();
-        $this->target = $target;
         $this->installPlugin();
+        $this->torForGuzzle = false;
+    }
+
+    public function setTarget($target){
+        $this->target = $target;
     }
 
     //VERIFY IF IS WORDPRESS
@@ -64,6 +68,7 @@ class WordPress
         $isUrl = v::url()->notEmpty()->validate($this->target);
         if ($isUrl) {
             $baseUrlWordPress = $this->getBaseUrlWordPressCrawler();
+            var_dump($baseUrlWordPress);
             if ($baseUrlWordPress) {
                 return true;
             }
@@ -74,8 +79,11 @@ class WordPress
 
     public function getBaseUrlWordPressByUrl()
     {
+        $arrUrl=parse_url($this->target);
+        if($arrUrl['path']=="/"){
+            return $this->target;
+        }
         $validXmlrpc = preg_match("/(.+?)((wp-content\/themes|wp-content\/plugins|wp-content\/uploads)|xmlrpc.php|feed\/|comments\/feed\/|wp-login.php|wp-admin).*/", $this->target, $m, PREG_OFFSET_CAPTURE);
-
         if ($validXmlrpc) {
             return $m[1][0];
         } else {
@@ -91,7 +99,7 @@ class WordPress
                 $crawler = new Crawler($body);
                 $arrLinks = $crawler->filter('script');
                 foreach ($arrLinks as $keyLink => $valueLink) {
-                    $validXmlrpc = preg_match("/(.+?)((wp-content\/themes|wp-content\/plugins|wp-content\/uploads)|xmlrpc.php|feed\/|comments\/feed\/|wp-login.php|wp-admin).*/", substr($valueLink->getAttribute('src'), 0), $m, PREG_OFFSET_CAPTURE);
+                    $validXmlrpc = preg_match("/(.+?)((wp-content\/themes|wp-content\/plugins|wp-content\/uploads)|xmlrpc.php|feed\/|comments\/feed\/|wp-login.php|wp-admin).*/", substr($valueLink->getAttribute('resource'), 0), $m, PREG_OFFSET_CAPTURE);
                     if ($validXmlrpc) {
                         return $m[1][0];
                     }
@@ -104,47 +112,17 @@ class WordPress
         return false;
     }
 
-    /*public function getBaseUrlWordPressByUrl(){
 
-        $isUrl   	= v::url()->notEmpty()->validate($this->target);
-        $header=new FakeHeaders();
-
-        if($isUrl) {
-            $client 	= new Client(['defaults' => [
-                'headers' => ['User-Agent' => $header->getUserAgent()],
-                'proxy'   => $this->torForGuzzle,
-                'timeout' => 30
-                ]
-            ]);
-            $body 		= $client->get( $this->target)->getBody()->getContents();
-
-            //Check status block
-            $crawler 	= new Crawler($body);
-            $arrLinks 	= $crawler->filter('link');
-            var_dump($arrLinks);
-            exit();
-            foreach ($arrLinks as $keyLink => $valueLink) {
-                $validHref=$valueLink->getAttribute('href');
-                if (!empty($validHref)) {
-                    $validXmlrpc = preg_match("/(.+?)((wp-content\/themes|wp-content\/plugins)|xmlrpc.php|feed\/|comments\/feed\/).*//*", substr($valueLink->getAttribute('href'), 0), $matches, PREG_OFFSET_CAPTURE);
-                    if ($validXmlrpc) {
-                        $resultTeste=explode($matches[1][0],$this->target);
-                        if(count($resultTeste)>=2){
-                            return $matches[1][0];
-                        }
-                    }
-
-                }
-            }
-        }
-    }*/
 
     public function getBaseUrlWordPressCrawler()
     {
         $targetTests[0] = $this->getBaseUrlWordPressByUrl();
         $targetTests[1] = $targetTests[0].'wp-login.php';
-        $header = new FakeHeaders();
+        var_dump($targetTests);
+        var_dump($this->torForGuzzle);
 
+        $header = new FakeHeaders();
+        var_dump($header->getUserAgent());
         foreach ($targetTests as $keyTarget => $targetTest) {
             try {
                 $client = new Client(['defaults' => [
@@ -159,9 +137,9 @@ class WordPress
                 $crawler = new Crawler($body);
 
                 $arrLinks = $crawler->filter('script');
-
+                var_dump($body);
                 foreach ($arrLinks as $keyLink => $valueLink) {
-                    $validHref = $valueLink->getAttribute('src');
+                    $validHref = $valueLink->getAttribute('resource');
                     if (!empty($validHref)) {
                         $validXmlrpc = preg_match("/(.+?)(wp-content\/themes|wp-content\/plugins|wp-includes\/).*/", $validHref, $matches, PREG_OFFSET_CAPTURE);
 
@@ -173,7 +151,7 @@ class WordPress
             } catch (\Exception $e) {
                 //echo "Error code ".$e->getCode()." => ".$e->getMessage();
 
-                    return false;
+                return false;
             }
         }
     }
@@ -226,7 +204,7 @@ class WordPress
                     'headers' => ['User-Agent' => $header->getUserAgent()],
                     'proxy' => $this->torForGuzzle,
                     'timeout' => 30,
-                    ],
+                ],
                 ]);
                 $result = $client->get($baseUrlWordPress.'/?author='.$i);
 
@@ -333,10 +311,10 @@ class WordPress
                 }
             }
 
-            //find src on scripts of js
+            //find resource on scripts of js
             foreach ($arrLinksScript as $keyScript => $valueScript) {
-                if (!empty($valueScript->getAttribute('src'))) {
-                    $arryUrls[] = $valueScript->getAttribute('src');
+                if (!empty($valueScript->getAttribute('resource'))) {
+                    $arryUrls[] = $valueScript->getAttribute('resource');
                 }
             }
 
@@ -393,8 +371,8 @@ class WordPress
     private function installPlugin()
     {
         $pathDataZip = __DIR__ . '/resource/data.zip';
-        $pathFolderTmp = __DIR__.'/resource/tmp/';
-        $this->pathPluginJson = __DIR__.'/resource/tmp/data/plugins.json';
+        $pathFolderTmp = __DIR__ . '/resource/tmp/';
+        $this->pathPluginJson = __DIR__ . '/resource/tmp/data/plugins.json';
         if (!file_exists($this->pathPluginJson)) {
             $zip = new \ZipArchive();
             $zip->open($pathDataZip);
