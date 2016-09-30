@@ -1,6 +1,6 @@
 <?php
 
-namespace Aszone\Hacking\WordPress;
+namespace Aszone\Hacking;
 
 use GuzzleHttp\Client;
 use Respect\Validation\Validator as v;
