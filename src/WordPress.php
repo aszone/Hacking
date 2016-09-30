@@ -389,7 +389,7 @@ class WordPress
 
         return $jsonPlugins;
     }
-    private function isHttps($url)
+    public function isHttps($url)
     {
         $isValidate = preg_match("/^https:\/\//", $url, $m, PREG_OFFSET_CAPTURE);
         if ($isValidate) {
