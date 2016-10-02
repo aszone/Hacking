@@ -68,7 +68,6 @@ class WordPress
         $isUrl = v::url()->notEmpty()->validate($this->target);
         if ($isUrl) {
             $baseUrlWordPress = $this->getBaseUrlWordPressCrawler();
-            var_dump($baseUrlWordPress);
             if ($baseUrlWordPress) {
                 return true;
             }
@@ -118,11 +117,8 @@ class WordPress
     {
         $targetTests[0] = $this->getBaseUrlWordPressByUrl();
         $targetTests[1] = $targetTests[0].'wp-login.php';
-        var_dump($targetTests);
-        var_dump($this->torForGuzzle);
 
         $header = new FakeHeaders();
-        var_dump($header->getUserAgent());
         foreach ($targetTests as $keyTarget => $targetTest) {
             try {
                 $client = new Client(['defaults' => [
@@ -132,19 +128,20 @@ class WordPress
                 ],
                 ]);
                 $res = $client->get($targetTest);
+
                 //Check status block
                 $body = $res->getBody()->getContents();
+
                 $crawler = new Crawler($body);
 
                 $arrLinks = $crawler->filter('script');
-                var_dump($body);
                 foreach ($arrLinks as $keyLink => $valueLink) {
-                    $validHref = $valueLink->getAttribute('resource');
+                    $validHref = $valueLink->getAttribute('src');
                     if (!empty($validHref)) {
                         $validXmlrpc = preg_match("/(.+?)(wp-content\/themes|wp-content\/plugins|wp-includes\/).*/", $validHref, $matches, PREG_OFFSET_CAPTURE);
 
                         if ($validXmlrpc) {
-                            return $matches[1][0];
+                            return true;
                         }
                     }
                 }
@@ -168,7 +165,23 @@ class WordPress
         return false;
     }
 
+    public function validateLogon($html)
+    {
+        $pos = strpos($html['body'], '<strong>ERRO</strong>');
+        $pos2 = strpos($html['body'], '<strong>ERROR</strong>');
+        $pos3 = strpos($html['body'], 'Account blocked for');
+        $pos4 = strpos($html['status']['url'], 'wp-admin');
 
+        //in future check timeout
+        if (($pos !== false or $pos2 !== false or $pos3 !== false)) {
+            return false;
+        }
+        if ($pos4 === false) {
+            return false;
+        }
+
+        return true;
+    }
 
     public function getRootUrl()
     {

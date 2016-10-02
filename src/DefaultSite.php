@@ -2,12 +2,11 @@
 
 namespace Aszone\Hacking;
 
-
 use GuzzleHttp\Client;
 use Aszone\FakeHeaders\FakeHeaders;
 use Respect\Validation\Validator as v;
 use Symfony\Component\DomCrawler\Crawler;
-
+use Aszone\Hacking\WordPress;
 
 class DefaultSite
 {
@@ -47,6 +46,12 @@ class DefaultSite
     public function checkSuccess()
     {
         $this->header = new FakeHeaders();
+        $wp = new WordPress();
+        $wp->setTarget($this->target);
+        if($wp->isWordPress()){
+            $this->target= $wp->getBaseUrlWordPressByUrl()."/wp-login.php";
+            return true;
+        }
         try {
             $client = new Client();
             $this->bodyTarget = $client->get(
@@ -71,10 +76,10 @@ class DefaultSite
         foreach ($this->targets as $searchEngenier) {
             foreach ($searchEngenier as $keyTarget => $target) {
                 $this->target = urldecode(urldecode($target));
-                echo $this->target;
                 $resultCheck = $this->checkSuccess();
                 if ($resultCheck) {
-                    echo ' Success...';
+                    echo $this->target;
+                    echo ' is a admin...';
                     $result[] = $this->target;
                 }
                 echo "\n";
