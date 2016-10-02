@@ -168,23 +168,7 @@ class WordPress
         return false;
     }
 
-    public function validateLogon($html)
-    {
-        $pos = strpos($html['body'], '<strong>ERRO</strong>');
-        $pos2 = strpos($html['body'], '<strong>ERROR</strong>');
-        $pos3 = strpos($html['body'], 'Account blocked for');
-        $pos4 = strpos($html['status']['url'], 'wp-admin');
 
-        //in future check timeout
-        if (($pos !== false or $pos2 !== false or $pos3 !== false)) {
-            return false;
-        }
-        if ($pos4 === false) {
-            return false;
-        }
-
-        return true;
-    }
 
     public function getRootUrl()
     {
