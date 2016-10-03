@@ -23,6 +23,8 @@ class WordPress
 
     public $torForGuzzle;
 
+    public $commandData;
+
     /**
      * @param string $proxy
      */
@@ -56,6 +58,25 @@ class WordPress
         $this->optionTor = array();
         $this->installPlugin();
         $this->torForGuzzle = false;
+
+        //Check command of entered.
+        $defaultEnterData = $this->defaultEnterData();
+        $this->commandData = array_merge($defaultEnterData, $commands);
+        if ($this->commandData['torl']) {
+            $this->commandData['tor'] = $this->commandData['torl'];
+        }
+    }
+
+    private function defaultEnterData()
+    {
+        $dataDefault['dork'] = false;
+        $dataDefault['pl'] = false;
+        $dataDefault['tor'] = false;
+        $dataDefault['torl'] = false;
+        $dataDefault['virginProxies'] = false;
+        $dataDefault['proxyOfSites'] = false;
+
+        return $dataDefault;
     }
 
     public function setTarget($target){
@@ -90,7 +111,7 @@ class WordPress
             try {
                 $client = new Client(['defaults' => [
                     'headers' => ['User-Agent' => $header->getUserAgent()],
-                    'proxy' => $this->torForGuzzle,
+                    'proxy' => $this->commandData['tor'],
                     'timeout' => 30,
                 ],
                 ]);
@@ -123,7 +144,7 @@ class WordPress
             try {
                 $client = new Client(['defaults' => [
                     'headers' => ['User-Agent' => $header->getUserAgent()],
-                    'proxy' => $this->torForGuzzle,
+                    'proxy' => $this->commandData['tor'],
                     'timeout' => 30,
                 ],
                 ]);
@@ -199,7 +220,7 @@ class WordPress
             try {
                 $client = new Client(['defaults' => [
                     'headers' => ['User-Agent' => $header->getUserAgent()],
-                    'proxy' => $this->torForGuzzle,
+                    'proxy' => $this->commandData['tor'],
                     'timeout' => 30,
                 ],
                 ]);
@@ -294,7 +315,7 @@ class WordPress
         try {
             $arrPluginsVull = array();
             $client = new Client();
-            $res = $client->get($this->target, $this->optionTor);
+            $res = $client->get($this->target, $this->commandData['tor']);
             //check if is block
             $body = $res->getBody()->getContents();
             $crawler = new Crawler($body);
@@ -352,7 +373,7 @@ class WordPress
         try {
             $url = $this->target.'/wp-content/plugins/'.$plugin;
             $client = new Client();
-            $res = $client->get($url, $this->optionTor);
+            $res = $client->get($url, $this->commandData['tor']);
             //check if change new tor ip
             $status = $res->getStatusCode();
             if (!$status == 200) {

@@ -14,11 +14,15 @@ class DefaultSite
 
     public $tor;
 
+    public $torl;
+
     public $proxy;
 
     public $bodyTarget;
 
     public $header;
+
+    public $commandData;
 
     public function __construct($commandData, $targets)
     {
@@ -45,6 +49,7 @@ class DefaultSite
 
     public function checkSuccess()
     {
+
         $this->header = new FakeHeaders();
         $wp = new WordPress();
         $wp->setTarget($this->target);
@@ -57,7 +62,7 @@ class DefaultSite
             $this->bodyTarget = $client->get(
                 $this->target,
                 [
-                    'proxy' => $this->proxy,
+                    'proxy' => $this->commandData['tor'],
                     'headers' => ['User-Agent' => $this->header->getUserAgent()],
                     'timeout' => 30,
                 ])->getBody()->getContents();
@@ -79,7 +84,7 @@ class DefaultSite
                 $resultCheck = $this->checkSuccess();
                 if ($resultCheck) {
                     echo $this->target;
-                    echo ' is a admin...';
+                    echo ' have a admin...';
                     $result[] = $this->target;
                 }
                 echo "\n";
@@ -196,7 +201,7 @@ class DefaultSite
         $dataToPost = ['body' => $dataPost];
         $client = new Client(['defaults' => [
             'headers' => ['User-Agent' => $this->header->getUserAgent()],
-            'proxy' => $this->proxy,
+            'proxy' => $this->commandData['tor'],
             'timeout' => 30,
         ],
         ]);
